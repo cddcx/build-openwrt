@@ -36,10 +36,10 @@ jobs:
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
-      - name: Checkout
+      - name: Checkout 开始
         uses: actions/checkout@main
 
-      - name: Initialization environment
+      - name: Initialization environment 初始化环境
         id: init
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -59,7 +59,7 @@ jobs:
           sudo timedatectl set-timezone "${TZ}"
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Clone source code [ ${{ inputs.source_branch }} ]
+      - name: Clone source code [ ${{ inputs.source_branch }} ] 克隆源码[ ${{ inputs.source_branch }} ]
         id: codes
         working-directory: /workdir
         if: ${{ steps.init.outputs.status }} == 'success' && !cancelled()
@@ -96,20 +96,20 @@ jobs:
           df -hT ${PWD}
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Load custom feeds
+      - name: Load custom feeds 加载自定义源
         run: |
           [[ -f "${FEEDS_CONF}" ]] && cp -f ${FEEDS_CONF} openwrt/feeds.conf.default
           chmod +x ${DIY_P1_SH}
           cd openwrt/
           ${GITHUB_WORKSPACE}/${DIY_P1_SH}
 
-      - name: Update feeds
+      - name: Update feeds 更新feeds
         run: cd openwrt/ && ./scripts/feeds update -a
 
-      - name: Install feeds
+      - name: Install feeds 安装feeds
         run: cd openwrt/ && ./scripts/feeds install -a
 
-      - name: Load custom configuration
+      - name: Load custom configuration 加载自定义配置
         run: |
           [[ -d "files" ]] && mv -f files openwrt/files
           [[ -e "${CONFIG_FILE}" ]] && cp -f ${CONFIG_FILE} openwrt/.config
@@ -117,7 +117,7 @@ jobs:
           cd openwrt/
           ${GITHUB_WORKSPACE}/${DIY_P2_SH}
 
-      - name: Download package
+      - name: Download package 下载软件包
         id: package
         run: |
           cd openwrt/
@@ -126,7 +126,7 @@ jobs:
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
 
-      - name: Compile the OpenWrt
+      - name: Compile the OpenWrt 编译固件
         id: compile
         run: |
           cd openwrt/
@@ -135,18 +135,18 @@ jobs:
           echo "status=success" >> ${GITHUB_OUTPUT}
 
 
-      - name: Check space usage
+      - name: Check space usage 检查空间使用情况
         if: (!cancelled())
         run: df -hT
 
-      - name: Upload bin directory
+      - name: Upload bin directory 上传bin目录
         uses: actions/upload-artifact@main
         if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
         with:
           name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
           path: openwrt/bin
 
-      - name: Organize files
+      - name: Organize files 组织文件
         id: organize
         if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
         run: |
@@ -155,14 +155,14 @@ jobs:
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
           echo "::set-output name=status::success"
 
-      - name: Upload firmware directory
+      - name: Upload firmware directory 上传固件目录
         uses: actions/upload-artifact@main
         if: steps.organize.outputs.status == 'success' && !cancelled()
         with:
           name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
           path: ${{ env.FIRMWARE }}
 
-      - name: Generate release tag
+      - name: Generate release tag 生成发布标签
         id: tag
         if: env.UPLOAD_RELEASE == 'true' && !cancelled()
         run: |
@@ -172,7 +172,7 @@ jobs:
           [ $UPLOAD_WETRANSFER = true ] && echo "🔗 [WeTransfer](${{ steps.wetransfer.outputs.url }})" >> release.txt
           echo "::set-output name=status::success"
 
-      - name: Upload firmware to release
+      - name: Upload firmware to release 上传固件以发布
         uses: softprops/action-gh-release@v1
         if: steps.tag.outputs.status == 'success' && !cancelled()
         env:
@@ -182,7 +182,7 @@ jobs:
           body_path: release.txt
           files: ${{ env.FIRMWARE }}/*
 
-      - name: Delete workflow runs
+      - name: Delete workflow runs 删除工作流程运行
         uses: GitRML/delete-workflow-runs@main
         with:
           retain_days: 1
